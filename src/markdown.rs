@@ -20,16 +20,21 @@ pub struct MdFormatConfig {
     folder: String,
     /// Handlebar template for extended folders
     xfolder: String,
+    /// Handlebar template for new markdown files
+    markdown: String,
 }
 
 impl Default for MdFormatConfig {
     fn default() -> Self {
         Self {
             system: "# {{name}}".to_owned(),
-            area: "## {{system_id}}.{{start area_range}}-{{end area_range}} {{topic}}".to_owned(),
-            category: "- {{full_id category_id}} {{topic}}".to_owned(),
-            folder: "  - {{#if (is_folder kind)}}{{full_id folder_id}} {{topic}}{{else}}[[{{full_id folder_id}} {{topic}}]]{{/if}}".to_owned(),
-            xfolder: "    - {{#if (is_folder kind)}}{{full_id folder_id}} {{topic}}{{else}}[[{{full_id folder_id}} {{topic}}]]{{/if}}".to_owned(),
+            area: "## {{id}}.{{start id_range}}-{{end id_range}} {{topic}}".to_owned(),
+            category: "- {{full_id id}} {{topic}}".to_owned(),
+            folder: "  - {{#if (is_folder kind)}}{{full_id id}} {{topic}}{{else}}[[{{full_id id}} {{topic}}]]{{/if}}".to_owned(),
+            xfolder: "    - {{#if (is_folder kind)}}{{full_id id}} {{topic}}{{else}}[[{{full_id id}} {{topic}}]]{{/if}}".to_owned(),
+            markdown: "---
+tags: [johnny-decimal, Librarian]
+---".to_owned(),
         }
     }
 }
@@ -111,6 +116,12 @@ impl<'hbar> MdFormatter<'hbar> {
         markdown.push('\n');
         Ok(markdown)
     }
+
+    pub fn markdown(&self) -> Result<String, Error> {
+        let mut markdown = self.handlebars.render("md", &String::new())?;
+        markdown.push('\n');
+        Ok(markdown)
+    }
 }
 
 impl<'hbar> TryFrom<MdFormatConfig> for MdFormatter<'hbar> {
@@ -128,6 +139,7 @@ impl<'hbar> TryFrom<MdFormatConfig> for MdFormatter<'hbar> {
             ("category", config.category),
             ("folder", config.folder),
             ("xfolder", config.xfolder),
+            ("md", config.markdown),
         ];
         templates
             .into_iter()
