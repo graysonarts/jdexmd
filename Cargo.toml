@@ -9,6 +9,7 @@ readme = "README.md"
 authors = ["Grayson <grayson.llc>"]
 
 [dependencies]
+cargo-husky = { version = "1.5.0", features = ["precommit-hook", "run-cargo-check", "run-cargo-clippy", "run-cargo-fmt"] }
 clap = { version = "4.5.18", features = ["derive", "env"] }
 color-eyre = { version = "0.6.3", features = ["issue-url", "url"] }
 expanduser = "1.2.2"
