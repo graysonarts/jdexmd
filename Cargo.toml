@@ -4,11 +4,10 @@ version = "0.1.2"
 edition = "2021"
 repository = "https://github.com/graysonarts/jdexmd"
 description = "A tool to generate a Johnny Decimal system for Obsidian and your Documents folder."
-license-file = "LICENSE"
 license = "MIT"
 readme = "README.md"
 authors = ["Grayson <grayson.llc>"]
-categories = ["utilities"]
+categories = ["command-line-utilities", "filesystem"]
 keywords = ["obsidian", "johnny-decimal", "jdex", "documents", "system"]
 
 [dependencies]
