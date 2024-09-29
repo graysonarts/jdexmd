@@ -5,6 +5,7 @@ edition = "2021"
 repository = "https://github.com/graysonarts/jdexmd"
 description = "A tool to generate a Johnny Decimal system for Obsidian and your Documents folder."
 license-file = "LICENSE"
+readme = "README.md"
 authors = ["Grayson <grayson.llc>"]
 
 [dependencies]
