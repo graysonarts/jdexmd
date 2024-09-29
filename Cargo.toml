@@ -7,8 +7,16 @@ description = "A tool to generate a Johnny Decimal system for Obsidian and your 
 license-file = "LICENSE"
 readme = "README.md"
 authors = ["Grayson <grayson.llc>"]
+categories = ["utilities"]
+keywords = ["obsidian", "johnny-decimal", "jdex", "documents", "system"]
 
 [dependencies]
+cargo-husky = { version = "1.5.0", features = [
+	"precommit-hook",
+	"run-cargo-check",
+	"run-cargo-clippy",
+	"run-cargo-fmt",
+] }
 clap = { version = "4.5.18", features = ["derive", "env"] }
 color-eyre = { version = "0.6.3", features = ["issue-url", "url"] }
 expanduser = "1.2.2"

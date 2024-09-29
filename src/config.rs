@@ -1,79 +1,102 @@
+use std::{fs::read_to_string, path::PathBuf};
 
 use color_eyre::eyre::Error;
 use serde::{Deserialize, Serialize};
 
-use crate::{jid::JohnnyId, line::parse_line, markdown::MdFormatConfig, model::*};
+use crate::{
+    jid::JohnnyId,
+    line::{parse_single, ParsedKind},
+    markdown::MdFormatConfig,
+    model::{Area, Category, Folder, FolderKind, System, XFolder},
+};
 
+/// The configuration for the Johnny Decimal system
 #[derive(Debug, Serialize, Deserialize)]
-pub struct SystemConfig {
+pub struct SystemParameters {
+    /// The system id for the Johnny Decimal system
     pub system_id: String,
+    /// The default separator for the system
     pub separator: Option<String>,
+    /// The name of the system
     pub name: String,
+    /// The configuration definition for the system
     pub config: String,
 }
 
+/// The output configuration for the Johnny Decimal system
 #[derive(Debug, Serialize, Deserialize)]
-pub struct OutputConfig {
+pub struct Output {
+    /// The folder where your note taking system wants the system
     pub base_folder: String,
+    /// The folder where the reference archive should be created
     pub reference_folder: String,
 }
 
+/// The configuration for the Johnny Decimal system
 #[derive(Debug, Serialize, Deserialize)]
-pub struct JohnnyDecimalConfig {
+pub struct JohnnyDecimal {
+    /// Configuring the system
     #[serde(flatten)]
-    pub system_config: SystemConfig,
+    pub system_config: SystemParameters,
+    /// Where we are outputting files
     #[serde(flatten)]
-    pub output_config: OutputConfig,
+    pub output_config: Output,
+    /// The handlebar themes for the markdown output
     #[serde(default)]
     pub format: MdFormatConfig,
 }
 
-impl JohnnyDecimalConfig {
-    pub fn from_file(path: &std::path::PathBuf) -> Result<Self, Error> {
-        let contents = std::fs::read_to_string(path)?;
-        let config: JohnnyDecimalConfig = toml::from_str(&contents)?;
+impl JohnnyDecimal {
+    /// Load the configuration from a TOML file
+    pub fn from_file(path: &PathBuf) -> Result<Self, Error> {
+        let contents = read_to_string(path)?;
+        let config: Self = toml::from_str(&contents)?;
         Ok(config)
     }
 }
 
-impl TryFrom<SystemConfig> for System {
+impl TryFrom<SystemParameters> for System {
     type Error = Error;
 
-    fn try_from(value: SystemConfig) -> Result<Self, Self::Error> {
-        let id = JohnnyId::default().system_id(&value.system_id);
-        let mut system = System::new(id, &value.name);
+    #[expect(
+        clippy::arithmetic_side_effects,
+        reason = "The likelihood of overflow is low"
+    )]
+    fn try_from(value: SystemParameters) -> Result<Self, Self::Error> {
+        let system_id = JohnnyId::default().system_id(&value.system_id);
+        let mut system = Self::new(system_id, &value.name);
         let lines = value.config.lines();
         for (line_no, raw) in lines.enumerate() {
-            let line = parse_line(line_no + 1, raw);
-            if let Err(e) = line {
+            let single_line = parse_single(line_no + 1, raw);
+            if let Err(err) = single_line {
                 eprintln!("Invalid Line: {}", raw.trim_start());
-                return Err(e);
+                return Err(err);
             }
-            let line = line?;
+            let line = single_line?;
             match line {
-                crate::line::LineKind::Area(start, end, topic) => {
-                    let area_id = system.system_id.clone().area_id(start, end, topic);
+                ParsedKind::Area(start, end, topic) => {
+                    let area_id = system.id.clone().area_id(start, end, topic);
                     let area = Area {
-                        area_id,
-                        area_range: (start, end),
-                        topic: topic.to_string(),
+                        id: area_id,
+                        id_range: (start, end),
+                        topic: topic.to_owned(),
                         categories: Vec::new(),
                     };
                     system.areas.push(area);
                 }
-                crate::line::LineKind::Category(id, topic) => {
+                ParsedKind::Category(id, topic) => {
                     system.areas.last_mut().and_then(|area| {
-                        let category_id = area.area_id.clone().category_id(id, topic);
+                        let category_id = area.id.clone().category_id(id, topic);
                         let category = Category {
-                            category_id,
-                            topic: topic.to_string(),
+                            id: category_id,
+                            topic: topic.to_owned(),
                             folders: Vec::new(),
                         };
                         area.categories.push(category);
                         None::<()>
                     });
                 }
-                crate::line::LineKind::Folder(id, entry_style, topic) => {
+                ParsedKind::Folder(id, entry_style, topic) => {
                     system
                         .areas
                         .last_mut()
@@ -85,10 +108,10 @@ impl TryFrom<SystemConfig> for System {
                                 FolderKind::Index => (FolderKind::Index, &topic[1..]),
                                 FolderKind::Folder => (FolderKind::Folder, &topic[0..]),
                             };
-                            let folder_id = category.category_id.clone().folder_id(id, bare_topic);
+                            let folder_id = category.id.clone().folder_id(id, bare_topic);
                             let folder = Folder {
-                                folder_id,
-                                topic: bare_topic.to_string(),
+                                id: folder_id,
+                                topic: bare_topic.to_owned(),
                                 kind,
                                 folders: Vec::new(),
                             };
@@ -96,7 +119,7 @@ impl TryFrom<SystemConfig> for System {
                             None::<()>
                         });
                 }
-                crate::line::LineKind::ExtendedFolder(id, entry_style, topic) => {
+                ParsedKind::ExtendedFolder(id, entry_style, topic) => {
                     system
                         .areas
                         .last_mut()
@@ -105,14 +128,15 @@ impl TryFrom<SystemConfig> for System {
                         .and_then(|folder| {
                             let (kind, bare_topic) = match entry_style {
                                 FolderKind::File => (FolderKind::File, &topic[1..]),
-                                FolderKind::Both => (FolderKind::Folder, &topic[1..]),
-                                FolderKind::Index => (FolderKind::Folder, &topic[1..]),
+                                FolderKind::Both | FolderKind::Index => {
+                                    (FolderKind::Folder, &topic[1..])
+                                }
                                 FolderKind::Folder => (FolderKind::Folder, &topic[0..]),
                             };
-                            let folder_id = folder.folder_id.clone().xfolder_id(id, bare_topic);
+                            let folder_id = folder.id.clone().xfolder_id(id, bare_topic);
                             let xfolder = XFolder {
-                                folder_id,
-                                topic: bare_topic.to_string(),
+                                id: folder_id,
+                                topic: bare_topic.to_owned(),
                                 kind,
                             };
                             folder.folders.push(xfolder);

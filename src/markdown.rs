@@ -7,36 +7,47 @@ use crate::{
     model::{Area, Category, Folder, FolderKind, System, XFolder},
 };
 
+/// Handlebar template strings from the config file
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MdFormatConfig {
+    /// Handlebar template for systems
     system: String,
+    /// Handlebar template for areas
     area: String,
+    /// Handlebar template for categories
     category: String,
+    /// Handlebar template for folders
     folder: String,
+    /// Handlebar template for extended folders
     xfolder: String,
 }
 
 impl Default for MdFormatConfig {
     fn default() -> Self {
         Self {
-            system: "# {{name}}".to_string(),
-            area: "## {{system_id}}.{{start area_range}}-{{end area_range}} {{topic}}".to_string(),
-            category: "- {{full_id category_id}} {{topic}}".to_string(),
-            folder: "  - {{#if (is_folder kind)}}{{full_id folder_id}} {{topic}}{{else}}[[{{full_id folder_id}} {{topic}}]]{{/if}}".to_string(),
-            xfolder: "    - {{#if (is_folder kind)}}{{full_id folder_id}} {{topic}}{{else}}[[{{full_id folder_id}} {{topic}}]]{{/if}}".to_string(),
+            system: "# {{name}}".to_owned(),
+            area: "## {{system_id}}.{{start area_range}}-{{end area_range}} {{topic}}".to_owned(),
+            category: "- {{full_id category_id}} {{topic}}".to_owned(),
+            folder: "  - {{#if (is_folder kind)}}{{full_id folder_id}} {{topic}}{{else}}[[{{full_id folder_id}} {{topic}}]]{{/if}}".to_owned(),
+            xfolder: "    - {{#if (is_folder kind)}}{{full_id folder_id}} {{topic}}{{else}}[[{{full_id folder_id}} {{topic}}]]{{/if}}".to_owned(),
         }
     }
 }
 
-pub struct MdFormatter<'a> {
-    handlebars: Handlebars<'a>,
+/// A markdown formatter for Johnny Decimal
+pub struct MdFormatter<'hbar> {
+    /// The handlebars instance used to generate the markdown
+    handlebars: Handlebars<'hbar>,
 }
 
+/// Bind the area to the system id
 #[derive(Debug, Serialize)]
-pub struct AreaWithParentId<'a> {
+pub struct AreaWithParentId<'area> {
     #[serde(flatten)]
-    area: &'a Area,
-    system_id: &'a str,
+    /// The area to format
+    area: &'area Area,
+    /// The id of the containing system
+    system_id: &'area str,
 }
 
 handlebars_helper!(full_id: |id: JohnnyId| id.by_seperator("."));
@@ -44,7 +55,8 @@ handlebars_helper!(start: |range: (u8, u8)| format!("{:02}", range.0));
 handlebars_helper!(end: |range: (u8, u8)| format!("{:02}", range.1));
 handlebars_helper!(is_folder: |kind: FolderKind| kind.is_folder());
 
-impl<'a> MdFormatter<'a> {
+impl<'hbar> MdFormatter<'hbar> {
+    /// Create markdown for a System
     pub fn system(&self, system: &System) -> Result<String, Error> {
         let mut markdown = String::default();
         markdown.push_str(&self.handlebars.render("system", system)?);
@@ -52,13 +64,14 @@ impl<'a> MdFormatter<'a> {
         for area in &system.areas {
             markdown.push_str(&self.area(&AreaWithParentId {
                 area,
-                system_id: &system.system_id.by_seperator("."),
+                system_id: &system.id.by_seperator("."),
             })?);
         }
 
         Ok(markdown)
     }
 
+    /// Create markdown for an Area
     pub fn area(&self, area: &AreaWithParentId) -> Result<String, Error> {
         let mut markdown = String::default();
         markdown.push_str(&self.handlebars.render("area", area)?);
@@ -70,6 +83,7 @@ impl<'a> MdFormatter<'a> {
         Ok(markdown)
     }
 
+    /// Create markdown for a Category
     pub fn category(&self, category: &Category) -> Result<String, Error> {
         let mut markdown = String::default();
         markdown.push_str(&self.handlebars.render("category", category)?);
@@ -81,6 +95,7 @@ impl<'a> MdFormatter<'a> {
         Ok(markdown)
     }
 
+    /// Create markdown for a Folder
     pub fn folder(&self, folder: &Folder) -> Result<String, Error> {
         let mut markdown = self.handlebars.render("folder", folder)?;
         markdown.push('\n');
@@ -90,6 +105,7 @@ impl<'a> MdFormatter<'a> {
         Ok(markdown)
     }
 
+    /// Create markdown for an Extended Folder
     pub fn xfolder(&self, folder: &XFolder) -> Result<String, Error> {
         let mut markdown = self.handlebars.render("xfolder", folder)?;
         markdown.push('\n');
@@ -97,8 +113,8 @@ impl<'a> MdFormatter<'a> {
     }
 }
 
-impl<'a> TryFrom<MdFormatConfig> for MdFormatter<'a> {
-    type Error = color_eyre::eyre::Error;
+impl<'hbar> TryFrom<MdFormatConfig> for MdFormatter<'hbar> {
+    type Error = Error;
 
     fn try_from(config: MdFormatConfig) -> Result<Self, Self::Error> {
         let mut handlebars = Handlebars::new();
