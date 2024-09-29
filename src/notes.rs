@@ -33,14 +33,8 @@ impl<'sys> Action<'sys> {
         match self {
             Action::CreateFile(path) => {
                 fs::create_dir_all(path.parent().ok_or_eyre("Unable to create parents")?)?;
-                fs::write(
-                    path,
-                    "
----
-tags:
-  - librarian
----",
-                )?;
+                let content = formatter.markdown()?;
+                fs::write(path, content)?;
             }
             Action::CreateDirectory(path) => {
                 fs::create_dir_all(path)?;
