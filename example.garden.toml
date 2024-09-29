@@ -1,0 +1,79 @@
+system_id = "N01"
+name = "Demo System"
+# This is where your main note taking system is stored. It is based on folders of markdown files. Basically, I use
+# Obsidian and this supports that structure.
+base_folder = "$HOME/Obsidian/obsidian-public/content"
+# But sometimes you also want to store additional files and such for the system, but not in your main note taking
+# system. So this allows you to create a parallel folder structure to store those files.
+reference_folder = "$HOME/Documents/Archive"
+# Config needs to be indented with tabs ONLY. This is the documentation of your system. Area, Categories and then
+# Folders. The folder has a couple of prefixes that are supported:
+#
+# `-`  Means that this folder is a single note in our system. It will create a markdown file with the name in the parent
+# folder, but will not create a subfolder for this Folder.
+#
+# `+` Means that this folder is both a single note and a
+# folder. This will allow you to create an index note for the folder.
+config = """
+00-09 System
+	00 Meta
+		00 *JDex
+		01 *System Inbox
+		02 WIP
+		03 TODOs and Checklists
+		04 References
+		05 Templates
+		08 *Someday
+		09 Archive
+	01 System Documentation
+		03 TODOs and Checklists
+		10 *Tools
+	09 Meta Archive
+		10 *TIL
+10-19 Techology
+	10 Software Engineering
+		00 +Inbox
+		10 Snippets
+			X01 Rust
+	11 AI
+		05 AI Custom Prompts
+		09 AI Conversation Archive
+		10 LLMs
+		11 Generative Image Models
+		12 Generative Video Models
+		13 Classification Models
+20-29 Creative
+	20 Writing
+		00 Inbox
+		10 Personal Essays and Reflections
+		11 Screenwriting
+	21 Visual Arts
+		00 +Inbox
+		10 Film
+		11 Analog Photography
+		12 Digital Photography
+		13 Creative Coding
+		14 Encaustics
+	22 Performing Arts
+		10 Dance
+		11 Video
+30-39 Reviews
+	30 Books
+	31 Films/Movies
+	32 Places
+		10 Restaurants and Cafes
+		11 Hotels
+40-49 Neuro Brain
+	40 Neurodivergence
+		00 +Inbox
+		10 ADHD
+"""
+
+[format]
+# This is the format that the jdex is created using. It is a handlebars template that is used to create the markdown or
+# whatever format you'd like. This is the default format.
+system = "# JDEX {{name}}"
+area = "## {{system_id}}.{{start area_range}}-{{end area_range}} {{topic}}"
+category = "- {{full_id category_id}} {{topic}}"
+folder = "  - [[{{full_id folder_id}} {{topic}}]] - {{kind}}"
+xfolder = "    - [[{{full_id folder_id}} {{topic}}]]"
