@@ -2,6 +2,10 @@
 name = "jdexmd"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/graysonarts/jdexmd"
+description = "A tool to generate a Johnny Decimal system for Obsidian and your Documents folder."
+license-file = "LICENSE"
+authors = ["Grayson <grayson.llc>"]
 
 [dependencies]
 clap = { version = "4.5.18", features = ["derive", "env"] }
