@@ -2,10 +2,10 @@ system_id = "N01"
 name = "Demo System"
 # This is where your main note taking system is stored. It is based on folders of markdown files. Basically, I use
 # Obsidian and this supports that structure.
-base_folder = "$HOME/Obsidian/obsidian-public/content"
+base_folder = "~/Obsidian/obsidian-public/content"
 # But sometimes you also want to store additional files and such for the system, but not in your main note taking
 # system. So this allows you to create a parallel folder structure to store those files.
-reference_folder = "$HOME/Documents/Archive"
+reference_folder = "~/Documents/Archive"
 # Config needs to be indented with tabs ONLY. This is the documentation of your system. Area, Categories and then
 # Folders. The folder has a couple of prefixes that are supported:
 #
@@ -14,11 +14,17 @@ reference_folder = "$HOME/Documents/Archive"
 #
 # `+` Means that this folder is both a single note and a
 # folder. This will allow you to create an index note for the folder.
+# config = """
+# 00-09 Area
+# 	00 Category
+# 		10 Folder
+# 			X20 XFolder
+# """
 config = """
 00-09 System
 	00 Meta
-		00 *JDex
-		01 *System Inbox
+		00 -JDex
+		01 -System Inbox
 		02 WIP
 		03 TODOs and Checklists
 		04 References
@@ -27,10 +33,10 @@ config = """
 		09 Archive
 	01 System Documentation
 		03 TODOs and Checklists
-		10 *Tools
+		10 -Tools
 	09 Meta Archive
-		10 *TIL
-10-19 Techology
+		10 -TIL
+10-19 Technology
 	10 Software Engineering
 		00 +Inbox
 		10 Snippets
@@ -48,7 +54,7 @@ config = """
 		10 Personal Essays and Reflections
 		11 Screenwriting
 	21 Visual Arts
-		00 +Inbox
+		00 Inbox
 		10 Film
 		11 Analog Photography
 		12 Digital Photography
@@ -65,7 +71,7 @@ config = """
 		11 Hotels
 40-49 Neuro Brain
 	40 Neurodivergence
-		00 +Inbox
+		00 -Inbox
 		10 ADHD
 """
 

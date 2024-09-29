@@ -3,8 +3,8 @@ use handlebars::{handlebars_helper, Handlebars};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    config::{Area, Category, Folder, System},
     jid::JohnnyId,
+    model::{Area, Category, Folder, System},
 };
 
 #[derive(Debug, Serialize, Deserialize)]

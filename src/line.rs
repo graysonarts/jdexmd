@@ -2,17 +2,17 @@ use color_eyre::eyre::{Error, OptionExt};
 
 #[derive(Debug)]
 pub enum EntryStyle {
-    Default,
-    File,
     Folder,
+    File,
+    Both,
 }
 
 impl EntryStyle {
     pub fn from_str(s: &str) -> Self {
         match s {
-            "+" => EntryStyle::File,
-            "*" => EntryStyle::Folder,
-            _ => EntryStyle::Default,
+            "-" => EntryStyle::File,
+            "+" => EntryStyle::Both,
+            _ => EntryStyle::Folder,
         }
     }
 }
@@ -30,8 +30,8 @@ fn parse_entry(trimmed: &str) -> Result<(u8, &str, Option<EntryStyle>), Error> {
     let id = parts.next().ok_or_eyre("no id found")?;
     let rest = parts.next().unwrap_or_default();
     let style = match rest.chars().next() {
-        Some('+') => Some(EntryStyle::File),
-        Some('*') => Some(EntryStyle::Folder),
+        Some('+') => Some(EntryStyle::Both),
+        Some('-') => Some(EntryStyle::File),
         _ => None,
     };
 
@@ -58,9 +58,9 @@ fn parse_extended_folder<'a>(
     let id = parts.next().ok_or_eyre("no id found")?;
     let rest = parts.next().unwrap_or_default();
     let style = match rest.chars().next() {
-        Some('+') => EntryStyle::File,
-        Some('*') => EntryStyle::Folder,
-        _ => EntryStyle::Default,
+        Some('+') => EntryStyle::Both,
+        Some('-') => EntryStyle::File,
+        _ => EntryStyle::Folder,
     };
 
     Ok((id, style, rest))
@@ -84,7 +84,7 @@ pub fn parse_line<'a>(line_no: usize, line: &'a str) -> Result<LineKind<'a>, Err
             let (id, topic, style) = parse_entry(trimmed)?;
             Ok(LineKind::Folder(
                 id,
-                style.unwrap_or(EntryStyle::Default),
+                style.unwrap_or(EntryStyle::Folder),
                 topic,
             ))
         }
