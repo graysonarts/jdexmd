@@ -5,13 +5,17 @@ use std::{
 };
 
 use color_eyre::eyre::{Error, OptionExt};
+use expanduser::expanduser;
 
 use crate::{
     config::OutputConfig,
     markdown::MdFormatter,
-    model::{FolderKind, FullId, Styled, System},
+    model::{Folder, FolderKind, FullId, Styled, System},
 };
 
+pub fn expand(path: &str) -> Result<PathBuf, Error> {
+    Ok(expanduser(path)?)
+}
 #[derive(Debug)]
 pub enum Action<'a> {
     CreateFile(PathBuf),
@@ -46,9 +50,9 @@ tags:
     }
     pub fn dry_run(&self) -> String {
         if need_to_apply(self) {
-            format!("Would {}", self)
+            format!("Would {}\n", self)
         } else {
-            format!("Would Skip {}", self)
+            "".to_string()
         }
     }
 }
@@ -71,9 +75,9 @@ pub fn need_to_apply(action: &Action) -> bool {
     }
 }
 
-pub fn get_all_actions<'a>(output_config: &OutputConfig, system: &System) -> Vec<Action<'a>> {
+pub fn get_all_actions<'a>(base_folder: &str, system: &'a System) -> Vec<Action<'a>> {
     let mut actions = Vec::new();
-    let base_path = output_config.expand(&output_config.base_folder).unwrap();
+    let base_path = expand(base_folder).unwrap();
     for area in &system.areas {
         let area_path = base_path.join(&area.area_id.as_path());
         actions.push(Action::CreateDirectory(area_path));
@@ -81,11 +85,11 @@ pub fn get_all_actions<'a>(output_config: &OutputConfig, system: &System) -> Vec
             let category_path = base_path.join(&category.category_id.as_path());
             actions.push(Action::CreateDirectory(category_path));
             for folder in &category.folders {
-                get_actions_for_folder(output_config, category, folder)
+                get_actions_for_folder(base_folder, system, category, folder)
                     .into_iter()
                     .for_each(|a| actions.push(a));
                 for xfolder in &folder.folders {
-                    get_actions_for_folder(output_config, folder, xfolder)
+                    get_actions_for_folder(base_folder, system, folder, xfolder)
                         .into_iter()
                         .for_each(|a| actions.push(a));
                 }
@@ -97,20 +101,22 @@ pub fn get_all_actions<'a>(output_config: &OutputConfig, system: &System) -> Vec
 }
 
 fn get_actions_for_folder<'a, F: FullId + Styled, J: FullId + Debug>(
-    config: &OutputConfig,
+    base_folder: &str,
+    root: &'a System,
     parent: &J,
     f: &F,
 ) -> Vec<Action<'a>> {
-    let base_path = config
-        .expand(&config.base_folder)
-        .unwrap()
-        .join(parent.as_path());
+    let base_path = expand(base_folder).unwrap().join(parent.as_path());
     let mut actions = Vec::new();
     let name = f.id();
 
     match f.style() {
         FolderKind::Folder => actions.push(Action::CreateDirectory(base_path.join(&name))),
         FolderKind::File => actions.push(Action::CreateFile(base_path.join(format!("{name}.md")))),
+        FolderKind::Index => actions.push(Action::WriteIndex(
+            base_path.join(format!("{name}.md")),
+            root,
+        )),
         FolderKind::Both => {
             actions.push(Action::CreateDirectory(base_path.join(&name)));
             actions.push(Action::CreateFile(base_path.join(format!("{name}.md"))));

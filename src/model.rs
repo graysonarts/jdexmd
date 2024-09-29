@@ -83,11 +83,24 @@ impl HasJohnnyId for Category {
     }
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Default)]
 pub enum FolderKind {
+    #[default]
     Folder,
     File,
     Both,
+    Index,
+}
+
+impl FolderKind {
+    pub fn from_char(c: char) -> Self {
+        match c {
+            '-' => FolderKind::File,
+            '+' => FolderKind::Both,
+            '!' => FolderKind::Index,
+            _ => FolderKind::Folder,
+        }
+    }
 }
 
 #[derive(Debug, Serialize)]

@@ -1,40 +1,20 @@
 use color_eyre::eyre::{Error, OptionExt};
 
-#[derive(Debug)]
-pub enum EntryStyle {
-    Folder,
-    File,
-    Both,
-}
-
-impl EntryStyle {
-    pub fn from_str(s: &str) -> Self {
-        match s {
-            "-" => EntryStyle::File,
-            "+" => EntryStyle::Both,
-            _ => EntryStyle::Folder,
-        }
-    }
-}
+use crate::model::FolderKind;
 
 #[derive(Debug)]
 pub enum LineKind<'a> {
     Area(u8, u8, &'a str),
     Category(u8, &'a str),
-    Folder(u8, EntryStyle, &'a str),
-    ExtendedFolder(&'a str, EntryStyle, &'a str),
+    Folder(u8, FolderKind, &'a str),
+    ExtendedFolder(&'a str, FolderKind, &'a str),
 }
 
-fn parse_entry(trimmed: &str) -> Result<(u8, &str, Option<EntryStyle>), Error> {
+fn parse_entry(line_no: usize, trimmed: &str) -> Result<(u8, &str, Option<FolderKind>), Error> {
     let mut parts = trimmed.splitn(2, ' ');
     let id = parts.next().ok_or_eyre("no id found")?;
     let rest = parts.next().unwrap_or_default();
-    let style = match rest.chars().next() {
-        Some('+') => Some(EntryStyle::Both),
-        Some('-') => Some(EntryStyle::File),
-        _ => None,
-    };
-
+    let style = rest.chars().next().map(|c| FolderKind::from_char(c));
     let id = id.parse()?;
     Ok((id, rest, style))
 }
@@ -53,15 +33,15 @@ fn parse_area_entry(trimmed: &str) -> Result<(u8, u8, &str), Error> {
 fn parse_extended_folder<'a>(
     line_no: usize,
     line: &'a str,
-) -> Result<(&'a str, EntryStyle, &'a str), Error> {
+) -> Result<(&'a str, FolderKind, &'a str), Error> {
     let mut parts = line.splitn(2, ' ');
     let id = parts.next().ok_or_eyre("no id found")?;
     let rest = parts.next().unwrap_or_default();
-    let style = match rest.chars().next() {
-        Some('+') => EntryStyle::Both,
-        Some('-') => EntryStyle::File,
-        _ => EntryStyle::Folder,
-    };
+    let style = rest
+        .chars()
+        .next()
+        .map(|c| FolderKind::from_char(c))
+        .unwrap_or_default();
 
     Ok((id, style, rest))
 }
@@ -77,16 +57,12 @@ pub fn parse_line<'a>(line_no: usize, line: &'a str) -> Result<LineKind<'a>, Err
             Ok(LineKind::Area(start, end, topic))
         }
         1 => {
-            let (id, topic, _) = parse_entry(trimmed)?;
+            let (id, topic, _) = parse_entry(line_no, trimmed)?;
             Ok(LineKind::Category(id, topic))
         }
         2 => {
-            let (id, topic, style) = parse_entry(trimmed)?;
-            Ok(LineKind::Folder(
-                id,
-                style.unwrap_or(EntryStyle::Folder),
-                topic,
-            ))
+            let (id, topic, style) = parse_entry(line_no, trimmed)?;
+            Ok(LineKind::Folder(id, style.unwrap_or_default(), topic))
         }
         3 => {
             let (id, style, topic) = parse_extended_folder(line_no, trimmed)?;

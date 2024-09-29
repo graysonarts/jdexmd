@@ -7,6 +7,7 @@ mod model;
 mod notes;
 
 use clap::Parser;
+use color_eyre::eyre::Error;
 use markdown::MdFormatter;
 use std::path::PathBuf;
 
@@ -32,17 +33,52 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let md_format = config.format;
     let system = System::try_from(system_config)?;
     let formatter: MdFormatter = md_format.try_into()?;
-    let actions = notes::get_all_actions(&output_config, &system)
+    generate_notes(&output_config, &system, &args, &formatter)?;
+    generate_archive(&output_config, &system, &args, &formatter)?;
+
+    Ok(())
+}
+
+fn generate_notes(
+    output_config: &config::OutputConfig,
+    system: &System,
+    args: &Arguments,
+    formatter: &MdFormatter<'_>,
+) -> Result<(), Error> {
+    if args.dry_run {
+        println!("Notes Folders");
+    }
+
+    let actions = notes::get_all_actions(&output_config.base_folder, &system)
         .into_iter()
         .filter(|t| args.dry_run || notes::need_to_apply(t));
-    for action in actions {
+    Ok(for action in actions {
         if args.dry_run {
-            println!("{}", action.dry_run());
+            print!("{}", action.dry_run());
         } else {
             action.execute(&formatter)?;
         }
-    }
-    // println!("{}", formatter.system(&system)?);
+    })
+}
 
-    Ok(())
+fn generate_archive(
+    output_config: &config::OutputConfig,
+    system: &System,
+    args: &Arguments,
+    formatter: &MdFormatter<'_>,
+) -> Result<(), Error> {
+    if args.dry_run {
+        println!("\nReference Archive")
+    }
+    let actions = notes::get_all_actions(&output_config.reference_folder, &system)
+        .into_iter()
+        .filter(|t| args.dry_run || notes::need_to_apply(t))
+        .filter(|t| matches!(t, notes::Action::CreateDirectory(_)));
+    Ok(for action in actions {
+        if args.dry_run {
+            print!("{}", action.dry_run());
+        } else {
+            action.execute(&formatter)?;
+        }
+    })
 }

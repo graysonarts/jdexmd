@@ -2,12 +2,14 @@ system_id = "N01"
 name = "Demo System"
 # This is where your main note taking system is stored. It is based on folders of markdown files. Basically, I use
 # Obsidian and this supports that structure.
-base_folder = "~/Obsidian/obsidian-public/content"
+base_folder = "~/tmp/test-notes"
 # But sometimes you also want to store additional files and such for the system, but not in your main note taking
 # system. So this allows you to create a parallel folder structure to store those files.
 reference_folder = "~/Documents/Archive"
 # Config needs to be indented with tabs ONLY. This is the documentation of your system. Area, Categories and then
 # Folders. The folder has a couple of prefixes that are supported:
+#
+# '!' - This entry is the JDEX file for the system. It will create a markdown file with the full list of the system.
 #
 # `-`  Means that this folder is a single note in our system. It will create a markdown file with the name in the parent
 # folder, but will not create a subfolder for this Folder.
@@ -23,7 +25,7 @@ reference_folder = "~/Documents/Archive"
 config = """
 00-09 System
 	00 Meta
-		00 -JDex
+		00 !JDex
 		01 -System Inbox
 		02 WIP
 		03 TODOs and Checklists

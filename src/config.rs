@@ -20,12 +20,6 @@ pub struct OutputConfig {
     pub reference_folder: String,
 }
 
-impl OutputConfig {
-    pub fn expand(&self, path: &str) -> Result<PathBuf, Error> {
-        Ok(expanduser(path)?)
-    }
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct JohnnyDecimalConfig {
     #[serde(flatten)]
@@ -88,11 +82,10 @@ impl TryFrom<SystemConfig> for System {
                         .and_then(|area| area.categories.last_mut())
                         .and_then(|category| {
                             let (kind, bare_topic) = match entry_style {
-                                crate::line::EntryStyle::File => (FolderKind::File, &topic[1..]),
-                                crate::line::EntryStyle::Both => (FolderKind::Folder, &topic[1..]),
-                                crate::line::EntryStyle::Folder => {
-                                    (FolderKind::Folder, &topic[0..])
-                                }
+                                FolderKind::File => (FolderKind::File, &topic[1..]),
+                                FolderKind::Both => (FolderKind::Both, &topic[1..]),
+                                FolderKind::Index => (FolderKind::Index, &topic[1..]),
+                                FolderKind::Folder => (FolderKind::Folder, &topic[0..]),
                             };
                             let folder_id = category.category_id.clone().folder_id(id, bare_topic);
                             let folder = Folder {
@@ -113,9 +106,10 @@ impl TryFrom<SystemConfig> for System {
                         .and_then(|category| category.folders.last_mut())
                         .and_then(|folder| {
                             let (kind, bare_topic) = match entry_style {
-                                crate::line::EntryStyle::File => (FolderKind::File, &topic[1..]),
-                                crate::line::EntryStyle::Both => (FolderKind::Folder, &topic[1..]),
-                                crate::line::EntryStyle::Folder => (FolderKind::Both, &topic[0..]),
+                                FolderKind::File => (FolderKind::File, &topic[1..]),
+                                FolderKind::Both => (FolderKind::Folder, &topic[1..]),
+                                FolderKind::Index => (FolderKind::Folder, &topic[1..]),
+                                FolderKind::Folder => (FolderKind::Folder, &topic[0..]),
                             };
                             let folder_id = folder.folder_id.clone().xfolder_id(id, bare_topic);
                             let xfolder = XFolder {
