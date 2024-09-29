@@ -4,7 +4,7 @@ version: 2.1
 jobs:
   test-rust:
     docker:
-      - image: cimg/rust:1.70
+      - image: cimg/rust:latest
     steps:
       - checkout
       - restore_cache:
