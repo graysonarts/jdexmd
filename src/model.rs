@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::jid::JohnnyId;
 
@@ -83,7 +83,7 @@ impl HasJohnnyId for Category {
     }
 }
 
-#[derive(Debug, Serialize, Default)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub enum FolderKind {
     #[default]
     Folder,
@@ -100,6 +100,10 @@ impl FolderKind {
             '!' => FolderKind::Index,
             _ => FolderKind::Folder,
         }
+    }
+
+    pub fn is_folder(&self) -> bool {
+        matches!(self, FolderKind::Folder)
     }
 }
 
