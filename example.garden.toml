@@ -31,7 +31,7 @@ config = """
 		03 TODOs and Checklists
 		04 References
 		05 Templates
-		08 *Someday
+		08 +Someday
 		09 Archive
 	01 System Documentation
 		03 TODOs and Checklists
