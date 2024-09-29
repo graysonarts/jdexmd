@@ -1,101 +1,138 @@
+use core::fmt::Formatter;
+use core::fmt::Write as _;
+use core::fmt::{Debug, Display, Result as FmtResult};
 use std::path::PathBuf;
-use std::{fmt::Debug, fmt::Display};
 
 use serde::{Deserialize, Serialize};
 
+/// Internal Macro to either append a part of the id or return everything
+/// that has been written so far
 macro_rules! append_or_return {
     ($maybe_id:expr, $id:ident, $sep:expr) => {
         if let Some(id_piece) = $maybe_id {
-            $id.push_str(&format!("{}{:02}", $sep, id_piece));
+            let _ = write!($id, "{}{:02}", $sep, id_piece);
         } else {
             return $id;
         }
     };
 }
 
+/// Binds a range of u8 ids to a topic
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BoundRangeId {
+    /// The topic of the range
     pub topic: String,
+    /// The start of the range
     pub start: u8,
+    /// The end of the range
     pub end: u8,
 }
 
+/// Binds a u8 id to a topic
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BoundU8Id {
+    /// The topic of the id
     pub topic: String,
+    /// The id
     pub id: u8,
 }
 
 impl Display for BoundU8Id {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    #[expect(
+        clippy::min_ident_chars,
+        reason = "This is the preferred default name for the variable"
+    )]
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "{:02}", self.id)
     }
 }
 
+/// Binds a string id to a topic
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BoundStrId {
+    /// The topic of the id
     pub topic: String,
+    /// The id
     pub id: String,
 }
 
 impl Display for BoundStrId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    #[expect(
+        clippy::min_ident_chars,
+        reason = "This is the preferred default name for the variable"
+    )]
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "{}", self.id)
     }
 }
 
+/// Represents the level of the id, used for testing how deep the id is
 #[repr(u8)]
 #[derive(PartialEq, PartialOrd)]
 enum Level {
+    /// Nothing is set
     Empty = 0,
+    /// The system is set
     System,
+    /// The system and area are set
     Area,
+    /// The system, area, and category are set
     Category,
+    /// The system, area, category, and folder are set
     Folder,
+    /// The system, area, category, folder, and extended folder are set
     ExtendedFolder,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[derive(Default)]
+/// Represents a Johnny Decimal id
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct JohnnyId {
-    pub system_id: Option<String>,
-    pub area_id: Option<BoundRangeId>,
-    pub category_id: Option<BoundU8Id>,
-    pub folder_id: Option<BoundU8Id>,
-    pub xfolder_id: Option<BoundStrId>,
+    /// The system id `L##`
+    pub system: Option<String>,
+    /// The area id `L##.##-##`
+    pub area: Option<BoundRangeId>,
+    /// The category id `L##.##` (notice that we don't include the area id here)
+    pub category: Option<BoundU8Id>,
+    /// The folder id `L##.##.##`
+    pub folder: Option<BoundU8Id>,
+    /// The extended folder id `L##.##.##.X##`
+    pub xfolder: Option<BoundStrId>,
 }
 
 impl JohnnyId {
-    fn level(&self) -> Level {
-        if self.system_id.is_none() {
+    /// Get the level of the id
+    const fn level(&self) -> Level {
+        if self.system.is_none() {
             return Level::Empty;
         }
-        if self.area_id.is_none() {
+        if self.area.is_none() {
             return Level::System;
         }
-        if self.category_id.is_none() {
+        if self.category.is_none() {
             return Level::Area;
         }
-        if self.folder_id.is_none() {
+        if self.folder.is_none() {
             return Level::Category;
         }
-        if self.xfolder_id.is_none() {
+        if self.xfolder.is_none() {
             return Level::Folder;
         }
         Level::ExtendedFolder
     }
 
+    /// Set the system id
     pub fn system_id(self, system_id: &str) -> Self {
         Self {
-            system_id: Some(system_id.to_string()),
+            system: Some(system_id.to_owned()),
             ..self
         }
     }
 
+    /// Set the area id
     pub fn area_id(self, start: u8, end: u8, topic: &str) -> Self {
         Self {
-            area_id: Some(BoundRangeId {
-                topic: topic.to_string(),
+            area: Some(BoundRangeId {
+                topic: topic.to_owned(),
                 start,
                 end,
             }),
@@ -103,152 +140,160 @@ impl JohnnyId {
         }
     }
 
+    /// Set the category id
     pub fn category_id(self, category_id: u8, topic: &str) -> Self {
         Self {
-            category_id: Some(BoundU8Id {
-                topic: topic.to_string(),
+            category: Some(BoundU8Id {
+                topic: topic.to_owned(),
                 id: category_id,
             }),
             ..self
         }
     }
 
+    /// Set the folder id
     pub fn folder_id(self, folder_id: u8, topic: &str) -> Self {
         Self {
-            folder_id: Some(BoundU8Id {
-                topic: topic.to_string(),
+            folder: Some(BoundU8Id {
+                topic: topic.to_owned(),
                 id: folder_id,
             }),
             ..self
         }
     }
 
+    /// Set the extended folder id
     pub fn xfolder_id(self, xfolder_id: &str, topic: &str) -> Self {
         Self {
-            xfolder_id: Some(BoundStrId {
-                topic: topic.to_string(),
-                id: xfolder_id.to_string(),
+            xfolder: Some(BoundStrId {
+                topic: topic.to_owned(),
+                id: xfolder_id.to_owned(),
             }),
             ..self
         }
     }
 
+    /// Get the id by a separator
     pub fn by_seperator(&self, sep: &str) -> String {
         let mut id = String::new();
-        if let Some(system_id) = &self.system_id {
+        if let Some(system_id) = &self.system {
             id.push_str(system_id);
         }
         if self.level() <= Level::Area {
-            if let Some(area_id) = &self.area_id {
-                id.push_str(&format!("{}{:02}-{:02}", sep, area_id.start, area_id.end));
+            if let Some(area_id) = &self.area {
+                let _ = write!(id, "{}{:02}-{:02}", sep, area_id.start, area_id.end);
             }
         }
-        append_or_return!(&self.category_id, id, sep);
-        append_or_return!(&self.folder_id, id, sep);
-        append_or_return!(&self.xfolder_id, id, sep);
+        append_or_return!(&self.category, id, sep);
+        append_or_return!(&self.folder, id, sep);
+        append_or_return!(&self.xfolder, id, sep);
 
         id
     }
 
+    /// Get the id by a separator with the names included in the id parts
     pub fn by_seperator_bound(&self, sep: &str) -> String {
         let mut id: Vec<String> = Vec::new();
-        let topic = self
-            .xfolder_id
+        let maybe_topic = self
+            .xfolder
             .as_ref()
-            .map(|id| id.topic.as_str())
+            .map(|bound_id| bound_id.topic.as_str())
+            .or_else(|| self.folder.as_ref().map(|bound_id| bound_id.topic.as_str()))
             .or_else(|| {
-                self.folder_id
-                    .as_ref().map(|id| id.topic.as_str())
-            })
-            .or_else(|| {
-                self.category_id
-                    .as_ref().map(|id| id.topic.as_str())
+                self.category
+                    .as_ref()
+                    .map(|bound_id| bound_id.topic.as_str())
             });
-        if let Some(system_id) = &self.system_id {
+        if let Some(system_id) = &self.system {
             id.push(system_id.to_string());
         }
         if self.level() <= Level::Area {
-            if let Some(area_id) = &self.area_id {
+            if let Some(area_id) = &self.area {
                 id.push(format!(
                     "{:02}-{:02} {}",
                     area_id.start, area_id.end, area_id.topic
                 ));
             }
         }
-        if let Some(category_id) = &self.category_id {
+        if let Some(category_id) = &self.category {
             id.push(format!("{:02}", category_id.id));
         }
-        if let Some(folder_id) = &self.folder_id {
+        if let Some(folder_id) = &self.folder {
             id.push(format!("{:02}", folder_id.id));
         }
-        if let Some(xfolder_id) = &self.xfolder_id {
-            id.push(xfolder_id.id.to_string());
+        if let Some(xfolder_id) = &(self.xfolder) {
+            id.push(xfolder_id.id.clone());
         }
 
-        match topic {
-            Some(topic) => {
-                format!("{} {}", id.join(sep), topic)
-            }
-            None => {
-                id.join(sep).to_string()
-            }
-        }
+        maybe_topic.map_or_else(
+            || id.join(sep),
+            |topic| format!("{} {}", id.join(sep), topic),
+        )
     }
 
-    pub fn as_path(&self) -> std::path::PathBuf {
+    /// Convert the id into a full path
+    pub fn as_path(&self) -> PathBuf {
         let mut result = PathBuf::from(self.by_seperator_bound("."));
         let mut parent = self.parent();
         while parent
             .as_ref()
-            .and_then(|p| p.system_id.as_deref())
+            .and_then(|current_parent| current_parent.system.as_deref())
             .is_some()
         {
-            let parent_id = parent.as_ref().unwrap().by_seperator_bound(".");
+            #[expect(clippy::expect_used, reason = "parent should always be set")]
+            let parent_id = parent
+                .as_ref()
+                .expect("Parent should always be valid")
+                .by_seperator_bound(".");
             result = PathBuf::from(parent_id).join(result);
-            parent = parent.and_then(|parent| parent.parent());
+            parent = parent.and_then(|new_parent| new_parent.parent());
         }
 
         result
     }
 
+    /// Get the parent of the current id
     pub fn parent(&self) -> Option<Self> {
-        self.system_id.as_ref()?;
+        self.system.as_ref()?;
 
-        if self.area_id.is_none() {
+        if self.area.is_none() {
             return Some(Self::default());
         }
 
-        if self.category_id.is_none() {
+        if self.category.is_none() {
             return Some(Self {
-                area_id: None,
+                area: None,
                 ..self.to_owned()
             });
         }
 
-        if self.folder_id.is_none() {
+        if self.folder.is_none() {
             return Some(Self {
-                category_id: None,
+                category: None,
                 ..self.to_owned()
             });
         }
 
-        if self.xfolder_id.is_none() {
+        if self.xfolder.is_none() {
             return Some(Self {
-                folder_id: None,
+                folder: None,
                 ..self.to_owned()
             });
         }
 
         Some(Self {
-            xfolder_id: None,
+            xfolder: None,
             ..self.to_owned()
         })
     }
 }
 
-
-impl std::fmt::Display for JohnnyId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl Display for JohnnyId {
+    #[expect(
+        clippy::min_ident_chars,
+        reason = "This is the preferred default name for the variable"
+    )]
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         write!(f, "{}", self.by_seperator("."))
     }
 }
