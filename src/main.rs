@@ -49,16 +49,17 @@ fn generate_notes(
         println!("Notes Folders");
     }
 
-    let actions = notes::get_all_actions(&output_config.base_folder, &system)
+    let actions = notes::get_all_actions(&output_config.base_folder, system)
         .into_iter()
         .filter(|t| args.dry_run || notes::need_to_apply(t));
-    Ok(for action in actions {
+    for action in actions {
         if args.dry_run {
             print!("{}", action.dry_run());
         } else {
-            action.execute(&formatter)?;
+            action.execute(formatter)?;
         }
-    })
+    };
+    Ok(())
 }
 
 fn generate_archive(
@@ -70,15 +71,16 @@ fn generate_archive(
     if args.dry_run {
         println!("\nReference Archive")
     }
-    let actions = notes::get_all_actions(&output_config.reference_folder, &system)
+    let actions = notes::get_all_actions(&output_config.reference_folder, system)
         .into_iter()
         .filter(|t| args.dry_run || notes::need_to_apply(t))
         .filter(|t| matches!(t, notes::Action::CreateDirectory(_)));
-    Ok(for action in actions {
+    for action in actions {
         if args.dry_run {
             print!("{}", action.dry_run());
         } else {
-            action.execute(&formatter)?;
+            action.execute(formatter)?;
         }
-    })
+    };
+    Ok(())
 }

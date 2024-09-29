@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     jid::JohnnyId,
-    model::{Area, Category, Folder, System},
+    model::{Area, Category, Folder, System, XFolder},
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -83,10 +83,13 @@ impl<'a> MdFormatter<'a> {
     pub fn folder(&self, folder: &Folder) -> Result<String, Error> {
         let mut markdown = self.handlebars.render("folder", folder)?;
         markdown.push('\n');
+        for xfolder in &folder.folders {
+            markdown.push_str(&self.xfolder(xfolder)?);
+        }
         Ok(markdown)
     }
 
-    pub fn xfolder(&self, folder: &Folder) -> Result<String, Error> {
+    pub fn xfolder(&self, folder: &XFolder) -> Result<String, Error> {
         let mut markdown = self.handlebars.render("xfolder", folder)?;
         markdown.push('\n');
         Ok(markdown)

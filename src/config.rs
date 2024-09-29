@@ -1,7 +1,5 @@
-use std::path::PathBuf;
 
 use color_eyre::eyre::Error;
-use expanduser::expanduser;
 use serde::{Deserialize, Serialize};
 
 use crate::{jid::JohnnyId, line::parse_line, markdown::MdFormatConfig, model::*};

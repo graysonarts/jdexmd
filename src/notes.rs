@@ -8,9 +8,8 @@ use color_eyre::eyre::{Error, OptionExt};
 use expanduser::expanduser;
 
 use crate::{
-    config::OutputConfig,
     markdown::MdFormatter,
-    model::{Folder, FolderKind, FullId, Styled, System},
+    model::{FolderKind, FullId, Styled, System},
 };
 
 pub fn expand(path: &str) -> Result<PathBuf, Error> {
@@ -62,7 +61,7 @@ impl<'a> Display for Action<'a> {
         match self {
             Action::CreateFile(p) => write!(f, "Create File {}", p.display()),
             Action::CreateDirectory(p) => write!(f, "Create Directory {}", p.display()),
-            Action::WriteIndex(p, s) => write!(f, "Write Index {}", p.display()),
+            Action::WriteIndex(p, _s) => write!(f, "Write Index {}", p.display()),
         }
     }
 }
@@ -79,10 +78,10 @@ pub fn get_all_actions<'a>(base_folder: &str, system: &'a System) -> Vec<Action<
     let mut actions = Vec::new();
     let base_path = expand(base_folder).unwrap();
     for area in &system.areas {
-        let area_path = base_path.join(&area.area_id.as_path());
+        let area_path = base_path.join(area.area_id.as_path());
         actions.push(Action::CreateDirectory(area_path));
         for category in &area.categories {
-            let category_path = base_path.join(&category.category_id.as_path());
+            let category_path = base_path.join(category.category_id.as_path());
             actions.push(Action::CreateDirectory(category_path));
             for folder in &category.folders {
                 get_actions_for_folder(base_folder, system, category, folder)
@@ -97,7 +96,7 @@ pub fn get_all_actions<'a>(base_folder: &str, system: &'a System) -> Vec<Action<
         }
     }
 
-    return actions;
+    actions
 }
 
 fn get_actions_for_folder<'a, F: FullId + Styled, J: FullId + Debug>(

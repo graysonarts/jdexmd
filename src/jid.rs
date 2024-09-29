@@ -56,6 +56,7 @@ enum Level {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Default)]
 pub struct JohnnyId {
     pub system_id: Option<String>,
     pub area_id: Option<BoundRangeId>,
@@ -157,13 +158,11 @@ impl JohnnyId {
             .map(|id| id.topic.as_str())
             .or_else(|| {
                 self.folder_id
-                    .as_ref()
-                    .and_then(|id| Some(id.topic.as_str()))
+                    .as_ref().map(|id| id.topic.as_str())
             })
             .or_else(|| {
                 self.category_id
-                    .as_ref()
-                    .and_then(|id| Some(id.topic.as_str()))
+                    .as_ref().map(|id| id.topic.as_str())
             });
         if let Some(system_id) = &self.system_id {
             id.push(system_id.to_string());
@@ -191,7 +190,7 @@ impl JohnnyId {
                 format!("{} {}", id.join(sep), topic)
             }
             None => {
-                format!("{}", id.join(sep))
+                id.join(sep).to_string()
             }
         }
     }
@@ -201,7 +200,7 @@ impl JohnnyId {
         let mut parent = self.parent();
         while parent
             .as_ref()
-            .and_then(|p| p.system_id.as_ref().and_then(|i| Some(i.as_str())))
+            .and_then(|p| p.system_id.as_deref())
             .is_some()
         {
             let parent_id = parent.as_ref().unwrap().by_seperator_bound(".");
@@ -213,9 +212,7 @@ impl JohnnyId {
     }
 
     pub fn parent(&self) -> Option<Self> {
-        if self.system_id.is_none() {
-            return None;
-        }
+        self.system_id.as_ref()?;
 
         if self.area_id.is_none() {
             return Some(Self::default());
@@ -249,17 +246,6 @@ impl JohnnyId {
     }
 }
 
-impl Default for JohnnyId {
-    fn default() -> Self {
-        Self {
-            system_id: None,
-            area_id: None,
-            category_id: None,
-            folder_id: None,
-            xfolder_id: None,
-        }
-    }
-}
 
 impl std::fmt::Display for JohnnyId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

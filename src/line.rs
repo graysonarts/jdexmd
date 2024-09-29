@@ -10,11 +10,11 @@ pub enum LineKind<'a> {
     ExtendedFolder(&'a str, FolderKind, &'a str),
 }
 
-fn parse_entry(line_no: usize, trimmed: &str) -> Result<(u8, &str, Option<FolderKind>), Error> {
+fn parse_entry(_line_no: usize, trimmed: &str) -> Result<(u8, &str, Option<FolderKind>), Error> {
     let mut parts = trimmed.splitn(2, ' ');
     let id = parts.next().ok_or_eyre("no id found")?;
     let rest = parts.next().unwrap_or_default();
-    let style = rest.chars().next().map(|c| FolderKind::from_char(c));
+    let style = rest.chars().next().map(FolderKind::from_char);
     let id = id.parse()?;
     Ok((id, rest, style))
 }
@@ -30,28 +30,25 @@ fn parse_area_entry(trimmed: &str) -> Result<(u8, u8, &str), Error> {
     Ok((start, end, rest))
 }
 
-fn parse_extended_folder<'a>(
-    line_no: usize,
-    line: &'a str,
-) -> Result<(&'a str, FolderKind, &'a str), Error> {
+fn parse_extended_folder(_line_no: usize, line: &str) -> Result<(&str, FolderKind, &str), Error> {
     let mut parts = line.splitn(2, ' ');
     let id = parts.next().ok_or_eyre("no id found")?;
     let rest = parts.next().unwrap_or_default();
     let style = rest
         .chars()
         .next()
-        .map(|c| FolderKind::from_char(c))
+        .map(FolderKind::from_char)
         .unwrap_or_default();
 
     Ok((id, style, rest))
 }
 
-pub fn parse_line<'a>(line_no: usize, line: &'a str) -> Result<LineKind<'a>, Error> {
+pub fn parse_line(line_no: usize, line: &str) -> Result<LineKind<'_>, Error> {
     let trimmed = line.trim();
     let line_length = line.len();
     let left_trim_length = line.trim_start().len();
     let indent = line_length - left_trim_length;
-    Ok(match indent {
+    match indent {
         0 => {
             let (start, end, topic) = parse_area_entry(trimmed)?;
             Ok(LineKind::Area(start, end, topic))
@@ -71,5 +68,5 @@ pub fn parse_line<'a>(line_no: usize, line: &'a str) -> Result<LineKind<'a>, Err
         _ => Err(Error::msg(format!(
             "Config file is not formatted correctly, error@{line_no}",
         ))),
-    }?)
+    }
 }
