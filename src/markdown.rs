@@ -28,7 +28,7 @@ impl Default for MdFormatConfig {
     fn default() -> Self {
         Self {
             system: "# {{name}}".to_owned(),
-            area: "## {{id}}.{{start id_range}}-{{end id_range}} {{topic}}".to_owned(),
+            area: "## {{full_id id}}.{{start id_range}}-{{end id_range}} {{topic}}".to_owned(),
             category: "- {{full_id id}} {{topic}}".to_owned(),
             folder: "  - {{#if (is_folder kind)}}{{full_id id}} {{topic}}{{else}}[[{{full_id id}} {{topic}}]]{{/if}}".to_owned(),
             xfolder: "    - {{#if (is_folder kind)}}{{full_id id}} {{topic}}{{else}}[[{{full_id id}} {{topic}}]]{{/if}}".to_owned(),

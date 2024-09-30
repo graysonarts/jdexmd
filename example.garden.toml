@@ -81,7 +81,7 @@ config = """
 # This is the format that the jdex is created using. It is a handlebars template that is used to create the markdown or
 # whatever format you'd like. This is the default format.
 system = "# JDEX {{name}}"
-area = "## {{id}}.{{start id_range}}-{{end id_range}} {{topic}}"
+area = "## {{full_id id}}.{{start id_range}}-{{end id_range}} {{topic}}"
 category = "- {{full_id id}} {{topic}}"
 folder = "  - {{#if (is_folder kind)}}{{full_id id}} {{topic}}{{else}}[[{{full_id id}} {{topic}}]]{{/if}}"
 xfolder = "    - {{#if (is_folder kind)}}{{full_id id}} {{topic}}{{else}}[[{{full_id id}} {{topic}}]]{{/if}}"
