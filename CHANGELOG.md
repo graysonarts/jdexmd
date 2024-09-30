@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.4](https://github.com/graysonarts/jdexmd/compare/v0.1.3...v0.1.4) - 2024-09-30
+
+### Other
+
+- The area markdown template didn't pass in full Id to the id ([#12](https://github.com/graysonarts/jdexmd/pull/12))
+
 ## [0.1.3](https://github.com/graysonarts/jdexmd/compare/v0.1.2...v0.1.3) - 2024-09-29
 
 ### Added
